@@ -14,7 +14,6 @@ export class RawBoids extends BoidHandler {
                 pos: p.createVector(Math.random() * width, Math.random() * height),
                 vel: p.createVector(Math.random() * 10 - 5, Math.random() * 10 - 5),
             };
-            const index = this.boids.push(boid);
         }
     }
 
