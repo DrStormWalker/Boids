@@ -4,7 +4,8 @@
   "source": "src/index.html",
   "license": "MIT",
   "dependencies": {
-    "p5": "^1.4.0"
+    "p5": "^1.4.0",
+    "spatial-hashmap": "^1.0.4"
   },
   "devDependencies": {
     "@parcel/validator-typescript": "^2.0.0-nightly.861",
