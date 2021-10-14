@@ -5,7 +5,7 @@ export class BoidHandler {
     width: number;
     height: number;
 
-    numBoids = 300;
+    numBoids = 200;
     visualRange = 75;
     boids: Boid[] = [];
 
@@ -21,7 +21,7 @@ export class BoidHandler {
             // Small chance for the boid to be a predator
             flock = flock < 0.05
                 ? 0
-                : Math.floor(flock) + 0.95;
+                : Math.floor(flock + 0.95);
 
             // Initialise the boid object
             const boid = {
@@ -72,7 +72,7 @@ export class BoidHandler {
                 : this.visualRange;
 
             // If the target boid is in range
-            if (dist < range && ((sameFlock && !predator) || predator)) {
+            if (dist < range && (sameFlock !== predator)) {
                 // If the boid is a predator and the target is prey,
                 // then the boid is more likely to stear towards the target
                 const factor = predator && !otherPredator
@@ -88,7 +88,7 @@ export class BoidHandler {
             }
 
             // If the target is within normal visual range
-            if (dist < this.visualRange && sameFlock) {
+            if (dist < this.visualRange && (sameFlock !== predator)) {
                 // Add to the total velocity
                 avg.add(otherBoid.vel);
 
@@ -96,11 +96,15 @@ export class BoidHandler {
                 numNeighboursAlignment++;
             }
 
+            let minDist = minDistance * (otherPredator && predator
+                ? 5
+                : 1);
+
             // If the target is within range
-            if (dist < minDistance) {
+            if (dist < minDist) {
                 // If the target is a predator and the boid is prey,
                 // then increase then move the boid away from the predator quicker
-                const factor = !predator && otherPredator
+                const factor = otherPredator
                     ? 10
                     : 1;
 
