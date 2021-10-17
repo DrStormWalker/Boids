@@ -28053,12 +28053,15 @@ class BoidHandler {
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
+        // Flock generation parameters
+        const numFlocks = 2; // Does not include predator flock
+        const numPredators = 4;
         // Initialise the boids
         for(let i = 0; i < this.numBoids; i++){
             // Generate a random flock for the boid
-            let flock = Math.random() * 2.05;
+            let flock = Math.random() * numFlocks;
             // Small chance for the boid to be a predator
-            flock = flock < 0.05 ? 0 : Math.floor(flock + 0.95);
+            flock = i < numPredators ? 0 : Math.floor(flock) + 1;
             // Initialise the boid object
             const boid = {
                 pos: p1.createVector(Math.random() * width, Math.random() * height),
