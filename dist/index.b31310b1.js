@@ -28060,7 +28060,7 @@ class BoidHandler {
         for(let i = 0; i < this.numBoids; i++){
             // Generate a random flock for the boid
             let flock = Math.random() * numFlocks;
-            // Small chance for the boid to be a predator
+            // The first `numPredators` boids will be predators
             flock = i < numPredators ? 0 : Math.floor(flock) + 1;
             // Initialise the boid object
             const boid = {
