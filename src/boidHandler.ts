@@ -5,14 +5,18 @@ export class BoidHandler {
     width: number;
     height: number;
 
-    numBoids = 200;
-    visualRange = 75;
+    numBoids: number;
+    visualRange: number;
     boids: Boid[] = [];
 
-    constructor(p: p5, width: number, height: number) {
+    constructor(p: p5, width: number, height: number, numBoids: number = 200, visualRange: number = 75) {
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
+
+        // Set the number of boids, and their visual range
+        this.numBoids = numBoids;
+        this.visualRange = visualRange;
 
         // Flock generation parameters
         const numFlocks = 2; // Does not include predator flock
@@ -22,7 +26,7 @@ export class BoidHandler {
         for (let i = 0; i < this.numBoids; i++) {
             // Generate a random flock for the boid
             let flock = Math.random() * numFlocks;
-            
+
             // The first `numPredators` boids will be predators
             flock = i < numPredators
                 ? 0

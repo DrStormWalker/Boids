@@ -28046,13 +28046,14 @@ var _p5 = require("p5");
 var _p5Default = parcelHelpers.interopDefault(_p5);
 var _boid = require("./boid");
 class BoidHandler {
-    constructor(p1, width, height){
-        this.numBoids = 200;
-        this.visualRange = 75;
+    constructor(p1, width, height, numBoids = 200, visualRange = 75){
         this.boids = [];
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
+        // Set the number of boids, and their visual range
+        this.numBoids = numBoids;
+        this.visualRange = visualRange;
         // Flock generation parameters
         const numFlocks = 2; // Does not include predator flock
         const numPredators = 4;
