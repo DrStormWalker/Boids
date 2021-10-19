@@ -6,21 +6,19 @@ export class BoidHandler {
     height: number;
 
     numBoids: number;
-    visualRange: number;
+    visualRange: number = 75;
     boids: Boid[] = [];
 
-    constructor(p: p5, width: number, height: number, numBoids: number = 200, visualRange: number = 75) {
+    constructor(p: p5, width: number, height: number, numBoids: number = 200, numPredators: number = 4) {
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
 
         // Set the number of boids, and their visual range
         this.numBoids = numBoids;
-        this.visualRange = visualRange;
 
         // Flock generation parameters
         const numFlocks = 2; // Does not include predator flock
-        const numPredators = 4;
 
         // Initialise the boids
         for (let i = 0; i < this.numBoids; i++) {
