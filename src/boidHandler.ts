@@ -6,10 +6,17 @@ export class BoidHandler {
     height: number;
 
     numBoids: number;
-    visualRange: number = 75;
+    private visualRange: number = 75;
     boids: Boid[] = [];
 
-    constructor(p: p5, width: number, height: number, numBoids: number = 200, numPredators: number = 4) {
+    constructor(
+        p: p5, 
+        width: number, 
+        height: number, 
+        numBoids: number = 200, 
+        numPredators: number = 4,
+        numPreyFlocks: number = 2,
+    ) {
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
@@ -17,13 +24,10 @@ export class BoidHandler {
         // Set the number of boids, and their visual range
         this.numBoids = numBoids;
 
-        // Flock generation parameters
-        const numFlocks = 2; // Does not include predator flock
-
         // Initialise the boids
         for (let i = 0; i < this.numBoids; i++) {
             // Generate a random flock for the boid
-            let flock = Math.random() * numFlocks;
+            let flock = Math.random() * numPreyFlocks;
 
             // The first `numPredators` boids will be predators
             flock = i < numPredators
@@ -41,6 +45,8 @@ export class BoidHandler {
             this.boids.push(boid);
         }
     }
+
+    set boidVisualRange(range: number) { this.visualRange = range; }
 
     applyRules(p: p5, boid: Boid, neighbours: Boid[]) {
         // Initialise parameters
@@ -95,7 +101,7 @@ export class BoidHandler {
             }
 
             // If the target is within normal visual range
-            if (dist < this.visualRange && (sameFlock !== predator)) {
+            if (dist < this.visualRange && sameFlock && !predator) {
                 // Add to the total velocity
                 avg.add(otherBoid.vel);
 
@@ -103,15 +109,11 @@ export class BoidHandler {
                 numNeighboursAlignment++;
             }
 
-            let minDist = minDistance * (otherPredator && predator
-                ? 5
-                : 1);
-
             // If the target is within range
-            if (dist < minDist) {
+            if (dist < minDistance) {
                 // If the target is a predator and the boid is prey,
                 // then increase then move the boid away from the predator quicker
-                const factor = otherPredator
+                const factor = otherPredator && !predator
                     ? 10
                     : 1;
 

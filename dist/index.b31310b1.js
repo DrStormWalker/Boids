@@ -464,14 +464,97 @@ const sketch = (p)=>{
     // Get the window width and height
     let width = window.innerWidth;
     let height = window.innerHeight;
+    // Declare the scope of the boidHandler
     let boidHandler;
+    // Declare the scope of the chaging variables
+    let numBoids = 100;
+    let numPredators = 4;
+    let numPreyFlocks = 2;
+    // Declare the scope of the visual range slider element
+    let visualRangeSlider;
+    // Number of boids change callback
+    const changeNumBoids = (input)=>{
+        numBoids = input.target.value;
+        boidHandler = new _boidHandler.BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+    };
+    // Number of predators change callback
+    const changeNumPredators = (input)=>{
+        numPredators = input.target.value;
+        boidHandler = new _boidHandler.BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+    };
+    // Number of prey flocks change callback
+    const changeNumPreyFlocks = (input)=>{
+        numPreyFlocks = input.target.value;
+        boidHandler = new _boidHandler.BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+    };
+    // Create the UI to change parameters
+    const createParameterInputs = ()=>{
+        // Parent div
+        let div = p.createDiv();
+        // Text input for the number of boids
+        let numBoidsInput = p.createInput("Number of boids", "number");
+        // Give the nuber of boids input ...
+        numBoidsInput// ... a unique identifier
+        .attribute("id", "num_boids_input")// ... a default value
+        .attribute("value", numBoids.toString())// ... a minimum possible value of 0
+        .attribute("min", "0")// ... a maximum possible value of 500
+        .attribute("max", "500")// ... a width of 60 pixels
+        .style("width", "60px")// ... centered text
+        .style("text-align", "center");
+        // Apply number of boids change callback
+        numBoidsInput.input(changeNumBoids);
+        // Create the label for the number of boids
+        let numBoidsLabel = p.createElement("label", "Number of boids:");
+        // ... decalring that it is for the number of boids text input
+        numBoidsLabel.attribute("for", "num_boids_input");
+        // Text input for the number of predators
+        let numPredatorsInput = p.createInput("Number of predators:", "number");
+        // Give the nuber of predators input ...
+        numPredatorsInput// ... a unique identifier
+        .attribute("id", "num_predators_input")// ... a default value
+        .attribute("value", numPredators.toString())// ... a minimum possible value of 0
+        .attribute("min", "0")// ... a width of 60 pixels
+        .style("width", "60px")// ... centered text
+        .style("text-align", "center");
+        // Apply number of predators change callback
+        numPredatorsInput.input(changeNumPredators);
+        // Create the label for the number of boids
+        let numPredatorsLabel = p.createElement("label", "Number of predators:");
+        // ... decalring that it is for the number of predators text input
+        numPredatorsLabel.attribute("for", "num_prey_flocks_input");
+        // Text input for the number of predators
+        let numPreyFlocksInput = p.createInput("Number of prey flocks:", "number");
+        // Give the nuber of prey flocks input ...
+        numPreyFlocksInput// ... a unique identifier
+        .attribute("id", "num_prey_flocks_input")// ... a default value
+        .attribute("value", numPreyFlocks.toString())// ... a minimum possible value of 1
+        .attribute("min", "1")// ... a maximum possible value of 3
+        .attribute("max", "3")// ... a width of 60 pixels
+        .style("width", "60px")// ... centered text
+        .style("text-align", "center");
+        // Apply number of prey flocks change callback
+        numPreyFlocksInput.input(changeNumPreyFlocks);
+        // Create the label for the number of prey flocks
+        let numPreyFlocksLabel = p.createElement("label", "Number of prey flocks:");
+        // ... decalring that it is for the number of prey flocks text input
+        numPredatorsLabel.attribute("for", "num_prey_flocks_input");
+        // Create the visual range slider
+        visualRangeSlider = p.createSlider(25, 150, 75);
+        // Add all the UI Elements to the parent div
+        div.child(numBoidsLabel).child(numBoidsInput).child(numPredatorsLabel).child(numPredatorsInput).child(numPreyFlocksLabel).child(numPreyFlocksInput).child(visualRangeSlider)// Set the parent div's location to (0, 0)
+        .position(0, 0);
+    };
     p.setup = ()=>{
         // Create the p5.js canvas
         p.createCanvas(width, height);
+        createParameterInputs();
         // Initialise the boids
-        boidHandler = new _boidHandler.BoidHandler(p, width, height);
+        boidHandler = new _boidHandler.BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
     };
     p.draw = ()=>{
+        // Update the visual range from the slider 
+        // (unfortunately I could find no reference to slider change callbacks in p5.js)
+        boidHandler.boidVisualRange = visualRangeSlider.value();
         // Clear the screen
         p.background("#ffffff");
         // Update and render the boids
@@ -28046,21 +28129,18 @@ var _p5 = require("p5");
 var _p5Default = parcelHelpers.interopDefault(_p5);
 var _boid = require("./boid");
 class BoidHandler {
-    constructor(p1, width, height, numBoids = 200, visualRange = 75){
+    constructor(p1, width, height, numBoids = 200, numPredators = 4, numPreyFlocks = 2){
+        this.visualRange = 75;
         this.boids = [];
         // Set the width and height of the area for the boids
         this.width = width;
         this.height = height;
         // Set the number of boids, and their visual range
         this.numBoids = numBoids;
-        this.visualRange = visualRange;
-        // Flock generation parameters
-        const numFlocks = 2; // Does not include predator flock
-        const numPredators = 4;
         // Initialise the boids
         for(let i = 0; i < this.numBoids; i++){
             // Generate a random flock for the boid
-            let flock = Math.random() * numFlocks;
+            let flock = Math.random() * numPreyFlocks;
             // The first `numPredators` boids will be predators
             flock = i < numPredators ? 0 : Math.floor(flock) + 1;
             // Initialise the boid object
@@ -28072,6 +28152,9 @@ class BoidHandler {
             // Add the boid to the array of boids
             this.boids.push(boid);
         }
+    }
+    set boidVisualRange(range) {
+        this.visualRange = range;
     }
     applyRules(p, boid, neighbours) {
         // Initialise parameters
@@ -28111,18 +28194,17 @@ class BoidHandler {
                 numNeighboursCoherence += factor;
             }
             // If the target is within normal visual range
-            if (dist < this.visualRange && sameFlock !== predator) {
+            if (dist < this.visualRange && sameFlock && !predator) {
                 // Add to the total velocity
                 avg.add(otherBoid.vel);
                 // Increment the value used to calculate the average velocity
                 numNeighboursAlignment++;
             }
-            let minDist = minDistance * (otherPredator && predator ? 5 : 1);
             // If the target is within range
-            if (dist < minDist) {
+            if (dist < minDistance) {
                 // If the target is a predator and the boid is prey,
                 // then increase then move the boid away from the predator quicker
-                const factor = otherPredator ? 10 : 1;
+                const factor = otherPredator && !predator ? 10 : 1;
                 // Increase the movement vector away from the target
                 move.add(_p5Default.default.Vector.sub(boid.pos, otherBoid.pos).mult(factor));
             }
