@@ -42,31 +42,4 @@ export function distance(boid1: Boid, boid2: Boid) {
     return p5.Vector.sub(boid1.pos, boid2.pos).mag();
 }
 
-export function keepWithinBounds(boid: Boid, width: number, height: number) {
-    // Initialise parameters
-    const margin = 100;
-    const turnFactor = 0.4;
-
-    // For each edge of the screen apply velocity to move the boid towards the middle of the screen
-    if (boid.pos.x < margin)
-        boid.vel.x += turnFactor;
-    if (boid.pos.x > width - margin)
-        boid.vel.x -= turnFactor;
-    if (boid.pos.y < margin)
-        boid.vel.y += turnFactor;
-    if (boid.pos.y > height - margin)
-        boid.vel.y -= turnFactor;
-}
-
-export function limitSpeed(boid: Boid) {
-    // Is the boid is a predatior it has a higher speed limit
-    const speedLimit = boid.flock === 0
-        ? 8
-        : 5;
-
-    // Apply the speed limit
-    const speed = boid.vel.mag();
-    if (speed > speedLimit)
-        boid.vel.div(speed).mult(speedLimit);
-}
 

@@ -1,11 +1,10 @@
 import p5 from "p5";
 import { drawBoid } from "./boid";
-import { BoidHandler } from "./boidHandler";
+import { BoidHandler, createBoundary } from "./boidHandler";
 
 const sketch = (p: p5) => {
-    // Get the window width and height
-    let width = window.innerWidth;
-    let height = window.innerHeight;
+    // Get the window boundaries
+    let boundary = createBoundary(0, 0, window.innerWidth, window.innerHeight);
 
     // Declare the scope of the boidHandler
     let boidHandler: BoidHandler;
@@ -21,19 +20,19 @@ const sketch = (p: p5) => {
     // Number of boids change callback
     const changeNumBoids = (input) => {
         numBoids = input.target.value as number;
-        boidHandler = new BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+        boidHandler = new BoidHandler(p, boundary, numBoids, numPredators, numPreyFlocks);
     }
 
     // Number of predators change callback
     const changeNumPredators = (input) => {
         numPredators = input.target.value as number;
-        boidHandler = new BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+        boidHandler = new BoidHandler(p, boundary, numBoids, numPredators, numPreyFlocks);
     }
 
     // Number of prey flocks change callback
     const changeNumPreyFlocks = (input) => {
         numPreyFlocks = input.target.value as number;
-        boidHandler = new BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+        boidHandler = new BoidHandler(p, boundary, numBoids, numPredators, numPreyFlocks);
     }
 
     // Create the UI to change parameters
@@ -138,18 +137,18 @@ const sketch = (p: p5) => {
 
     p.setup = () => {
         // Create the p5.js canvas
-        p.createCanvas(width, height);
+        p.createCanvas(boundary.x2, boundary.y2);
         
         createParameterInputs();
 
         // Initialise the boids
-        boidHandler = new BoidHandler(p, width, height, numBoids, numPredators, numPreyFlocks);
+        boidHandler = new BoidHandler(p, boundary, numBoids, numPredators, numPreyFlocks);
     }
 
     p.draw = () => {
         // Update the visual range from the slider 
         // (unfortunately I could find no reference to slider change callbacks in p5.js)
-        boidHandler.boidVisualRange = visualRangeSlider.value() as number;
+        boidHandler.params.visualRange = visualRangeSlider.value() as number;
 
         // Clear the screen
         p.background("#ffffff");

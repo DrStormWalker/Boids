@@ -1,31 +1,107 @@
 import p5 from "p5";
-import { Boid, distance, drawBoid, keepWithinBounds, limitSpeed } from "./boid";
+import { Boid, distance } from "./boid";
+
+// All parameters for calculating next boid iteration
+export interface BoidHandlerParameters {
+    visualRange: number;
+    coherenceFactor: number;
+    alignmentFactor: number;
+    minDistance: number;
+    separationFactor: number;
+
+    predatorAvoidanceFactor: number;
+    preyAttractionFactor: number;
+    predatorToPreyVisualRangeMultiplier: number;
+
+    predatorSpeedLimit: number;
+    preySpeedLimit: number;
+
+    containerMargin: number;
+    turningForce: number;
+}
+
+export interface Boundary {
+    // Top left point
+    x1: number;
+    y1: number;
+    // Bottom right point
+    x2: number;
+    y2: number;
+};
+
+// Helper function to create boundary
+export function createBoundary(x1: number, y1: number, x2: number, y2: number);
+// Allow use of p5.js vectors
+export function createBoundary(pos1: p5.Vector, pos2: p5.Vector);
+
+export function createBoundary(
+    arg1: number | p5.Vector,
+    arg2: number | p5.Vector,
+    arg3?: number,
+    arg4?: number,
+): Boundary {
+    let x1, x2, y1, y2;
+    // Account for passing vectors
+    if (arg1 instanceof p5.Vector) {
+        if (!(arg2 instanceof p5.Vector))
+            throw "Unreachable";
+        
+        x1 = arg1.x; y1 = arg1.y;
+        x2 = arg2.x; y2 = arg2.y;
+    } else {
+        x1 = arg1; y1 = arg2;
+        x2 = arg3; y2 = arg4;
+    }
+
+    // Calculate the top left point and the bottom right point
+    return {
+        x1: Math.min(x1, x2),
+        y1: Math.min(y1, y2),
+        x2: Math.max(x1, x2),
+        y2: Math.max(y1, y2),
+    };
+}
 
 export class BoidHandler {
-    width: number;
-    height: number;
+    private boids: Boid[] = [];
 
-    numBoids: number;
-    private visualRange: number = 75;
-    boids: Boid[] = [];
+    // area for the boids to fly within
+    private boundary: Boundary;
+
+    // Set parameter defaults
+    public params: BoidHandlerParameters = {
+        visualRange: 75,
+        coherenceFactor: 0.01,
+        alignmentFactor: 0.05,
+        minDistance: 20,
+        separationFactor: 0.1,
+
+        predatorAvoidanceFactor: 10,
+        preyAttractionFactor: 3,
+        predatorToPreyVisualRangeMultiplier: 4,
+
+        predatorSpeedLimit: 8,
+        preySpeedLimit: 5,
+
+        containerMargin: 100,
+        turningForce: 0.4,
+    };
 
     constructor(
         p: p5, 
-        width: number, 
-        height: number, 
+        boundary: Boundary,
         numBoids: number = 200, 
         numPredators: number = 4,
         numPreyFlocks: number = 2,
     ) {
         // Set the width and height of the area for the boids
-        this.width = width;
-        this.height = height;
+        this.boundary = boundary;
 
-        // Set the number of boids, and their visual range
-        this.numBoids = numBoids;
+        let width = boundary.x2 - boundary.x1;
+        let height = boundary.y2 - boundary.y1;
 
         // Initialise the boids
-        for (let i = 0; i < this.numBoids; i++) {
+        for (let i = 0; i < numBoids; i++) {
             // Generate a random flock for the boid
             let flock = Math.random() * numPreyFlocks;
 
@@ -36,7 +112,7 @@ export class BoidHandler {
 
             // Initialise the boid object
             const boid = {
-                pos: p.createVector(Math.random() * width, Math.random() * height),
+                pos: p.createVector(Math.random() * width + boundary.x1, Math.random() * height + boundary.y1),
                 vel: p.createVector(Math.random() * 10 - 5, Math.random() * 10 - 5),
                 flock,
             };
@@ -45,15 +121,43 @@ export class BoidHandler {
             this.boids.push(boid);
         }
     }
+    
+    keepWithinBounds(boid: Boid) {
+        // Initialise parameters
+        const margin = this.params.containerMargin;
+        const turnFactor = this.params.turningForce;
 
-    set boidVisualRange(range: number) { this.visualRange = range; }
+        // For each edge of the boundary apply velocity to move the boid towards the middle of the screen
+        if (boid.pos.x < this.boundary.x1 + margin)
+            boid.vel.x += turnFactor;
+        if (boid.pos.x > this.boundary.x2 - margin)
+            boid.vel.x -= turnFactor;
+        if (boid.pos.y < this.boundary.y1 + margin)
+            boid.vel.y += turnFactor;
+        if (boid.pos.y > this.boundary.y2 - margin)
+            boid.vel.y -= turnFactor;
+    }
+
+    limitSpeed(boid: Boid) {
+        // Is the boid is a predatior it has a higher speed limit
+        const speedLimit = boid.flock === 0
+            ? this.params.predatorSpeedLimit
+            : this.params.preySpeedLimit;
+
+        // Apply the speed limit
+        const speed = boid.vel.mag();
+        if (speed > speedLimit)
+            boid.vel.div(speed).mult(speedLimit);
+    }
 
     applyRules(p: p5, boid: Boid, neighbours: Boid[]) {
         // Initialise parameters
-        const coherenceFactor = 0.01;
-        const alignmentFactor = 0.05;
-        const minDistance = 20;
-        const separationFactor = 0.1;
+        const coherenceFactor = this.params.coherenceFactor;
+        const alignmentFactor = this.params.alignmentFactor;
+        const minDistance = this.params.minDistance;
+        const separationFactor = this.params.separationFactor;
+
+        const visualRange = this.params.visualRange;
 
         // Initialise variables
         let center = p.createVector(0, 0);
@@ -81,15 +185,15 @@ export class BoidHandler {
             // If the boid is a predator (flock 0) and the target is prey,
             // then the visual range of the boid is increased
             let range = predator && !otherPredator
-                ? this.visualRange * 4
-                : this.visualRange;
+                ? visualRange * this.params.predatorToPreyVisualRangeMultiplier
+                : visualRange;
 
             // If the target boid is in range
             if (dist < range && (sameFlock !== predator)) {
                 // If the boid is a predator and the target is prey,
                 // then the boid is more likely to stear towards the target
                 const factor = predator && !otherPredator
-                    ? 3
+                    ? this.params.preyAttractionFactor
                     : 1;
 
                 // Apply the other boid's position and the prey factor
@@ -101,7 +205,7 @@ export class BoidHandler {
             }
 
             // If the target is within normal visual range
-            if (dist < this.visualRange && sameFlock && !predator) {
+            if (dist < visualRange && sameFlock && !predator) {
                 // Add to the total velocity
                 avg.add(otherBoid.vel);
 
@@ -114,7 +218,7 @@ export class BoidHandler {
                 // If the target is a predator and the boid is prey,
                 // then increase then move the boid away from the predator quicker
                 const factor = otherPredator && !predator
-                    ? 10
+                    ? this.params.predatorAvoidanceFactor
                     : 1;
 
                 // Increase the movement vector away from the target
@@ -153,7 +257,7 @@ export class BoidHandler {
     renderBoids(p: p5, renderFn: (p: p5, boid: Boid) => void): void {
         // Loop through the array of boids and render them
         for (let boid of this.boids)
-            drawBoid(p, boid);
+            renderFn(p, boid);
     }
 
     updateBoids(p: p5): void {
@@ -162,9 +266,9 @@ export class BoidHandler {
             // Update the boid's velocity based on the rules
             this.applyRules(p, boid, this.boids);
             // Limit the boid's speed
-            limitSpeed(boid);
+            this.limitSpeed(boid);
             // Keep it within the bounds of the screen
-            keepWithinBounds(boid, this.width, this.height);
+            this.keepWithinBounds(boid);
 
             // Update the boid's position with its velocity
             boid.pos.add(boid.vel);
